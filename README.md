@@ -1,7 +1,6 @@
-# date app
+# tennis buddy
 
-golang back-end; react front-end
-- see jimnotes/dateapp notes for URS
+golang back-end; vue.js front-end
 - want a challenge?
 
 ## TODO
@@ -15,7 +14,7 @@ golang back-end; react front-end
 
 ### changelog
 
-- looking into mongodb over postgres. See terms&conditions for details. 21aug2024 ... decided on postgres
+- postgres db name tennisbuddy
 - friend needs an inventory management system. 21aug2024
     - dbname is inventorydb
 
