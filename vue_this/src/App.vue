@@ -4,5 +4,13 @@
         <TodoList />
     </div>
 </template>
-<style scoped>
-</style>
+
+<script>
+import TodoList from './components/TodoList.vue'
+
+export default {
+    components: {
+        TodoList
+    },
+};
+</script>

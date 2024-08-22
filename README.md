@@ -6,6 +6,7 @@ golang back-end; vue.js front-end
 ## TODO
 
 hacks s03e06 kiss music
+- [ ] start with ladders ... build from there
 - [ ] create user
 - [ ] create user dashboard
 - [ ] create users admin dashboard
@@ -19,25 +20,25 @@ hacks s03e06 kiss music
 ### changelog
 
 - postgres db name is tennisbuddy
-- friend needs an inventory management system. 21aug2024
+- pro shop needs an inventory management system. 21aug2024
     - dbname is inventorydb
-- 22aug2024
+- 22aug2024: changes to main.go
     Configuration and Error Handling:
-    - Environment variables for database credentials improve security and flexibility.
-    - Centralized configuration simplifies management.
-    - Clearer error messages help with debugging.
+        - Environment variables for database credentials improve security and flexibility.
+        - Centralized configuration simplifies management.
+        - Clearer error messages help with debugging.
 
     API Routing:
-    - Modularized API route handling enhances code organization.
-    - Explicit error handling within the API route improves robustness.
+        - Modularized API route handling enhances code organization.
+        - Explicit error handling within the API route improves robustness.
 
     Static File Serving:
-    - Error handling during file server setup ensures graceful failures.
+        - Error handling during file server setup ensures graceful failures.
 
     Server Startup:
-    - Dynamic port number from environment variable allows for easier deployment.
-    - Informative log message indicates the actual port the server is running on.
-    - Remember to add error handling for parsing the integer in getIntEnv and replace the placeholder comment with the actual parsing logic.
+        - Dynamic port number from environment variable allows for easier deployment.
+        - Informative log message indicates the actual port the server is running on.
+        - Remember to add error handling for parsing the integer in getIntEnv and replace the placeholder comment with the actual parsing logic.
 
 #### POSTGRESQL quickies
 - Open pgsql $psql
