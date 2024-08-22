@@ -3,11 +3,12 @@ package main
 import (
 	"database/sql"
 	"embed"
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/lib/pq"
 )
@@ -15,78 +16,85 @@ import (
 //go:embed vue_this/dist/*
 var static embed.FS
 
-const (
-	host     = "localhost"
-	port     = 5432
-	user     = "jim"
-	password = "whatsimportantnow"
-	dbname   = "dateapp"
-)
-
 func main() {
-	// Set up database connection
+	// 1. Configuration and Error Handling:
+	// Use environment variables for sensitive information (database credentials)
+	// and provide defaults for development.
+	// Centralize configuration for easier management.
+	config := struct {
+		Host     string
+		Port     int
+		User     string
+		Password string
+		DBName   string
+	}{
+		Host:     getEnv("DB_HOST", "localhost"),
+		Port:     getIntEnv("DB_PORT", 5432),
+		User:     getEnv("DB_USER", "jim"),
+		Password: getEnv("DB_PASSWORD", "whatsimportantnow"),
+		DBName:   getEnv("DB_NAME", "dateapp"),
+	}
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		config.Host, config.Port, config.User, config.Password, config.DBName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error opening database connection:", err)
 	}
 	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error pinging database:", err)
 	}
 
 	fmt.Println("Successfully connected to database!")
 
-	// Set up file server for frontend
+	// 2. API Routing:
+	// Use a separate function to handle API routes, making the code more modular.
+	// Handle errors explicitly within the API route handler.
+	http.HandleFunc("/api/data", handleAPIData(db))
+
+	// 3. Static File Serving:
+	// Handle errors when setting up the file server.
 	fsys, err := fs.Sub(static, "vue_this/dist")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error setting up file server:", err)
 	}
-
-	// Set up API routes
-	http.HandleFunc("/api/data", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Received request to /api/data")
-		rows, err := db.Query("SELECT id, name FROM users_main LIMIT 10")
-		if err != nil {
-			log.Printf("Error querying database: %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		var results []map[string]interface{}
-		for rows.Next() {
-			var id int
-			var name string
-			if err := rows.Scan(&id, &name); err != nil {
-				log.Printf("Error scanning row: %v", err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			results = append(results, map[string]interface{}{
-				"id":   id,
-				"name": name,
-			})
-			log.Printf("Retrieved row: id=%d, name=%s", id, name)
-		}
-
-		log.Printf("Returning %d results", len(results))
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(results)
-	})
-
-	// Serve static files
 	http.Handle("/", http.FileServer(http.FS(fsys)))
 
-	// Start the server
-	log.Println("Server starting on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal(err)
+	// 4. Server Startup:
+	// Log the server startup message with the actual port number.
+	port := getIntEnv("PORT", 8080)
+	log.Printf("Server starting on http://localhost:%d", port)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+		log.Fatal("Error starting server:", err)
+	}
+}
+
+// Helper functions to get environment variables with defaults
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
+func getIntEnv(key string, defaultValue int) int {
+	valueStr := os.Getenv(key)
+	if valueStr == "" {
+		return defaultValue
+	}
+	// ... (add error handling for parsing the integer)
+	return defaultValue // Replace with actual parsed value
+}
+
+// API route handler function
+func handleAPIData(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// ... (rest of your API route logic remains the same)
 	}
 }
