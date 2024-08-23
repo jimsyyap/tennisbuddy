@@ -1,11 +1,10 @@
 # tennis buddy
 
-golang back-end; vue.js front-end
-- want a challenge?
+- challenge? It's like strava for tennis
+- golang back-end; vue.js front-end
 
 ## TODO
 
-hacks s03e06 kiss music
 - [ ] start with ladders ... build from there
 - [ ] create user
 - [ ] create user dashboard
@@ -13,6 +12,11 @@ hacks s03e06 kiss music
 - [ ] which info for each user?
 - [ ] api for admin?
 - [ ] api for users
+- [ ] users can set up socials
+- [ ] users can join socials
+- [ ] users can setup matches/comp
+- [ ] users can join matches/comp
+- [ ] users can view matches/comp results
 - [ ] set up tables (postgres)
 - [ ] matching algorithm using ML/AI
 - [ ] scrape data from ladders, present info with better interface, and allow users to do something on the site

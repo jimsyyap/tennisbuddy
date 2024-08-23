@@ -32,7 +32,7 @@ func main() {
 		Port:     getIntEnv("DB_PORT", 5432),
 		User:     getEnv("DB_USER", "jim"),
 		Password: getEnv("DB_PASSWORD", "whatsimportantnow"),
-		DBName:   getEnv("DB_NAME", "dateapp"),
+		DBName:   getEnv("DB_NAME", "tennisbuddy"),
 	}
 
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
@@ -96,5 +96,21 @@ func getIntEnv(key string, defaultValue int) int {
 func handleAPIData(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// ... (rest of your API route logic remains the same)
+		switch r.URL.Path {
+		case "/api/users":
+			// ... (handle /api/users route)
+		case "/api/matches":
+			// ... (handle /api/matches route)
+		case "/api/tournaments":
+			// ... (handle /api/tournaments route)
+		default:
+			http.Error(w, "Not Found", http.StatusNotFound)
+		}
 	}
+}
+
+func createUser(db *sql.DB, username, email, password string) error {
+	_, err := db.Exec("INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
+		username, email, hashPassword(password))
+	return err
 }

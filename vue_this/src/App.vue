@@ -1,21 +1,21 @@
-<script setup lang="ts">
-    import { defineComponent } from 'vue';
-    import AppHeader from './components/AppHeader.vue';
-    import TodoList from './components/TodoList.vue';
-
-    export default defineComponent({
-        name: 'App',
-        components: {
-            AppHeader,
-            TodoList
-        }
-    })
-</script>
-
 <template>
-    <AppHeader />
-    <TodoList />
+  <AppHeader />
+  <TodoList />
 </template>
+
+<script setup lang="ts">
+import { defineComponent } from 'vue';
+import AppHeader from './components/AppHeader.vue';
+import TodoList from './components/TodoList.vue';
+
+defineComponent({
+  name: 'App',
+  components: {
+    AppHeader,
+    TodoList
+  }
+});
+</script>
 
 <style scoped>
 #app {
@@ -29,13 +29,3 @@
   background-color: #f0f0f0;
 }
 </style>
-
-<script>
-import TodoList from './components/TodoList.vue'
-
-export default {
-    components: {
-        TodoList
-    },
-};
-</script>
