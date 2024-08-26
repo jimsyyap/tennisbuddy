@@ -8,20 +8,24 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
+var db *gorm.DB
+
 //go:embed vue_this/dist/*
 var static embed.FS
 
-// Define your models
+// User model (update to include json tags)
 type User struct {
 	gorm.Model
-	Username string `gorm:"uniqueIndex;not null"`
-	Email    string `gorm:"uniqueIndex;not null"`
-	Password string `gorm:"not null"`
+	Username string `gorm:"uniqueIndex;not null" json:"username"`
+	Email    string `gorm:"uniqueIndex;not null" json:"email"`
+	Password string `gorm:"not null" json:"-"` // "-" means this field is not marshalled to JSON
 }
 
 type Location struct {
@@ -75,6 +79,69 @@ func main() {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Australia/Melbourne",
 		config.Host, config.User, config.Password, config.DBName, config.Port)
 
+	var err error
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	// Controlled migration
+	err = performMigration(db)
+	if err != nil {
+		log.Fatal("Failed to perform migration:", err)
+	}
+
+	fmt.Println("Successfully connected to database and migrated schemas!")
+
+	// Set up CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
+	})
+
+	// API Routing
+	r := mux.NewRouter()
+	r.HandleFunc("/api/hello", handleHello(db)).Methods("GET")
+
+	// CRUD routes
+	r.HandleFunc("/api/users", getUsers).Methods("GET")
+	r.HandleFunc("/api/users", createUser).Methods("POST")
+	r.HandleFunc("/api/users/{id}", getUser).Methods("GET")
+	r.HandleFunc("/api/users/{id}", updateUser).Methods("PUT")
+	r.HandleFunc("/api/users/{id}", deleteUser).Methods("DELETE")
+
+	// Wrap router with CORS middleware
+	handler := c.Handler(r)
+
+	// Server Startup
+	port := getEnv("PORT", "8080")
+	log.Printf("Server starting on http://localhost:%s", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
+		log.Fatal("Error starting server:", err)
+	}
+}
+
+/*
+func main() {
+	// Configuration
+	config := struct {
+		Host     string
+		Port     string
+		User     string
+		Password string
+		DBName   string
+	}{
+		Host:     getEnv("DB_HOST", "localhost"),
+		Port:     getEnv("DB_PORT", "5432"),
+		User:     getEnv("DB_USER", "jim"),
+		Password: getEnv("DB_PASSWORD", "whatsimportantnow"),
+		DBName:   getEnv("DB_NAME", "tennisbuddy"),
+	}
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Australia/Melbourne",
+		config.Host, config.User, config.Password, config.DBName, config.Port)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
@@ -108,8 +175,64 @@ func main() {
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal("Error starting server:", err)
 	}
+
+	// crud stuff
+	r := mux.NewRouter()
+
+	r.HandleFunc("/api/users", getUsers).Methods("GET")
+	r.HandleFunc("/api/users", createUser).Methods("POST")
+	r.HandleFunc("/api/users/{id}", getUser).Methods("GET")
+	r.HandleFunc("/api/users/{id}", updateUser).Methods("PUT")
+	r.HandleFunc("/api/users/{id}", deleteUser).Methods("DELETE")
+}
+*/
+
+func getUsers(w http.ResponseWriter, r *http.Request) {
+	var users []User
+	db.Find(&users)
+	json.NewEncoder(w).Encode(users)
 }
 
+func getUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var user User
+	db.First(&user, params["id"])
+	json.NewEncoder(w).Encode(user)
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	json.NewDecoder(r.Body).Decode(&user)
+
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+	user.Password = string(hashedPassword)
+
+	db.Create(&user)
+	json.NewEncoder(w).Encode(user)
+}
+
+func updateUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var user User
+	db.First(&user, params["id"])
+	json.NewDecoder(r.Body).Decode(&user)
+	db.Save(&user)
+	json.NewEncoder(w).Encode(user)
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var user User
+	db.Delete(&user, params["id"])
+	json.NewEncoder(w).Encode("User deleted successfully")
+}
+
+// ... other functions remain the same
 func performMigration(db *gorm.DB) error {
 	// Check if the tables exist
 	if db.Migrator().HasTable(&User{}) &&

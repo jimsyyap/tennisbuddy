@@ -1,10 +1,11 @@
 # tennis buddy
 
-- ? Why not like strava for tennis
+- Platform for rec tennis players in local to connect, play, and compete
 - golang back-end; vue.js front-end
 
 ## TODO
 
+- [ ] main.go is too big. Break it up into smaller files and folders
 - [ ] start with ladders ... build from there
 - [ ] create user
 - [ ] create user dashboard
@@ -19,9 +20,12 @@
 - [ ] users can view matches/comp results
 - [ ] set up tables (postgres)
 - [ ] matching algorithm using ML/AI
+- [ ] social-media/forum/chat
 - [ ] video streaming
+- [ ] marketplace to sell, auction with bidding
 - [ ] membership dashboard
 - [ ] also do for paa
+- [ ] see how you can use this https://github.com/PacktPublishing/Full-Stack-React-Projects-Second-Edition/tree/master
 - [ ] scrape data from ladders, present info with better interface, and allow users to do something on the site
 
 ### changelog
@@ -59,3 +63,4 @@
 
 #### vue quickies
 - npm init vue@latest > npm i > run dev
+
