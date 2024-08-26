@@ -20,11 +20,14 @@
 - [ ] set up tables (postgres)
 - [ ] matching algorithm using ML/AI
 - [ ] video streaming
+- [ ] membership dashboard
 - [ ] also do for paa
 - [ ] scrape data from ladders, present info with better interface, and allow users to do something on the site
 
 ### changelog
 
+- 26aug2024 - frontend to react.js, but keeping vue_this folder just in case.
+- created helloworld app.js...connected to postgres == joy
 - postgres db name is tennisbuddy
 - pro shop needs an inventory management system. 21aug2024
     - dbname is inventorydb
