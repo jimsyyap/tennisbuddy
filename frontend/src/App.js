@@ -1,5 +1,5 @@
 import React from 'react';
-import UserCRUD from './UserCRUD';
+import UserCRUD from './components/UserCRUD';
 
 const App = () => {
     return (

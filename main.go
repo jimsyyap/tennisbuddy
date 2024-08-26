@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	//"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -58,6 +59,16 @@ type Tournament struct {
 	EndDate    string `gorm:"not null"`
 	LocationID uint
 	Location   Location `gorm:"foreignKey:LocationID"`
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+func sendErrorResponse(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
 }
 
 func main() {
@@ -200,19 +211,66 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
+/*
 func createUser(w http.ResponseWriter, r *http.Request) {
 	var user User
-	json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Hash the password with secure salt
+	hashedPassword, err := hashPassword(user.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	user.Password = hashedPassword
+
+	if err := db.Create(&user).Error; err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(user)
+}
+
+func hashPassword(password string) (string, error) {
+        // Generate a random salt
+        salt := argon2.GenerateSalt(16)
+
+        // Hash the password with argon2
+        hash := argon2.IDKey([]byte(password), salt, 1, 64*1024, 4, 32)
+
+        // Encode the hash and salt as a string (base64 is a common choice)
+        encodedHash := base64.StdEncoding.EncodeToString(append(salt, hash...))
+
+        return encodedHash, nil
+}
+*/
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	var user User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		sendErrorResponse(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		sendErrorResponse(w, http.StatusInternalServerError, "Failed to hash password")
 		return
 	}
 	user.Password = string(hashedPassword)
 
-	db.Create(&user)
+	if err := db.Create(&user).Error; err != nil {
+		sendErrorResponse(w, http.StatusInternalServerError, "Failed to create user")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(user)
 }
 
