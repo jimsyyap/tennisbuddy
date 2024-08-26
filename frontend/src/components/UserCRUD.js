@@ -138,3 +138,108 @@ const UserCRUD = () => {
 };
 
 export default UserCRUD;
+
+/*
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL;
+
+const UserList = () => {
+    const [users, setUsers] = useState([]);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/users`);
+            setUsers(response.data);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+            setError("Failed to fetch users. Please try again later.");
+        }
+    };
+
+    if (error) {
+        return <div className="text-red-500">{error}</div>;
+    }
+
+    return (
+        <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-4">Users</h2>
+            <ul className="space-y-2">
+                {users.map(user => (
+                    <li key={user.ID} className="bg-white shadow rounded-lg p-4">
+                        {user.username} - {user.email}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+};
+
+// ... rest of the component remains the same
+
+const UserCRUD = () => {
+    const [users, setUsers] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/users`);
+            setUsers(response.data);
+        } catch (err) {
+            console.error("Error fetching users:", err);
+            setError("Failed to fetch users. Please try again later.");
+        }
+    };
+
+    const createUser = async (userData) => {
+        try {
+            await axios.post(`${API_URL}/users`, userData);
+            fetchUsers();
+        } catch (err) {
+            console.error("Error creating user:", err);
+            setError("Failed to create user. Please try again.");
+        }
+    };
+
+    const updateUser = async (userData) => {
+        try {
+            await axios.put(`${API_URL}/users/${userData.ID}`, userData);
+            fetchUsers();
+            setSelectedUser(null);
+        } catch (err) {
+            console.error("Error updating user:", err);
+            setError("Failed to update user. Please try again.");
+        }
+    };
+
+    const deleteUser = async (userId) => {
+        try {
+            await axios.delete(`${API_URL}/users/${userId}`);
+            fetchUsers();
+        } catch (err) {
+            console.error("Error deleting user:", err);
+            setError("Failed to delete user. Please try again.");
+        }
+    };
+
+    if (error) {
+        return <div className="text-red-500">{error}</div>;
+    }
+
+    // ... rest of the component remains the same
+};
+
+export default UserCRUD;
+*/
+
