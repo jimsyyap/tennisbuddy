@@ -1,116 +1,165 @@
 package main
 
 import (
-	"database/sql"
 	"embed"
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
 
-	_ "github.com/lib/pq"
+	"github.com/rs/cors"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 //go:embed vue_this/dist/*
 var static embed.FS
 
+// Define your models
+type User struct {
+	gorm.Model
+	Username string `gorm:"uniqueIndex;not null"`
+	Email    string `gorm:"uniqueIndex;not null"`
+	Password string `gorm:"not null"`
+}
+
+type Location struct {
+	gorm.Model
+	Name    string `gorm:"not null"`
+	Address string `gorm:"not null"`
+	City    string `gorm:"not null"`
+	State   string `gorm:"not null"`
+	Country string `gorm:"not null"`
+}
+
+type Match struct {
+	gorm.Model
+	Player1ID  uint
+	Player2ID  uint
+	LocationID uint
+	MatchDate  string `gorm:"not null"`
+	Score      string
+	WinnerID   uint
+	Player1    User     `gorm:"foreignKey:Player1ID"`
+	Player2    User     `gorm:"foreignKey:Player2ID"`
+	Location   Location `gorm:"foreignKey:LocationID"`
+	Winner     User     `gorm:"foreignKey:WinnerID"`
+}
+
+type Tournament struct {
+	gorm.Model
+	Name       string `gorm:"not null"`
+	StartDate  string `gorm:"not null"`
+	EndDate    string `gorm:"not null"`
+	LocationID uint
+	Location   Location `gorm:"foreignKey:LocationID"`
+}
+
 func main() {
-	// 1. Configuration and Error Handling:
-	// Use environment variables for sensitive information (database credentials)
-	// and provide defaults for development.
-	// Centralize configuration for easier management.
+	// Configuration
 	config := struct {
 		Host     string
-		Port     int
+		Port     string
 		User     string
 		Password string
 		DBName   string
 	}{
 		Host:     getEnv("DB_HOST", "localhost"),
-		Port:     getIntEnv("DB_PORT", 5432),
+		Port:     getEnv("DB_PORT", "5432"),
 		User:     getEnv("DB_USER", "jim"),
 		Password: getEnv("DB_PASSWORD", "whatsimportantnow"),
 		DBName:   getEnv("DB_NAME", "tennisbuddy"),
 	}
 
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		config.Host, config.Port, config.User, config.Password, config.DBName)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Australia/Melbourne",
+		config.Host, config.User, config.Password, config.DBName, config.Port)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Error opening database connection:", err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Error pinging database:", err)
+		log.Fatal("Failed to connect to database:", err)
 	}
 
-	fmt.Println("Successfully connected to database!")
-
-	// 2. API Routing:
-	// Use a separate function to handle API routes, making the code more modular.
-	// Handle errors explicitly within the API route handler.
-	http.HandleFunc("/api/data", handleAPIData(db))
-
-	// 3. Static File Serving:
-	// Handle errors when setting up the file server.
-	fsys, err := fs.Sub(static, "vue_this/dist")
+	// Controlled migration
+	err = performMigration(db)
 	if err != nil {
-		log.Fatal("Error setting up file server:", err)
+		log.Fatal("Failed to perform migration:", err)
 	}
-	http.Handle("/", http.FileServer(http.FS(fsys)))
 
-	// 4. Server Startup:
-	// Log the server startup message with the actual port number.
-	port := getIntEnv("PORT", 8080)
-	log.Printf("Server starting on http://localhost:%d", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+	fmt.Println("Successfully connected to database and migrated schemas!")
+
+	// Set up CORS
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"*"},
+	})
+
+	// API Routing
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/hello", handleHello(db))
+
+	// Wrap mux with CORS middleware
+	handler := c.Handler(mux)
+
+	// Server Startup
+	port := getEnv("PORT", "8080")
+	log.Printf("Server starting on http://localhost:%s", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatal("Error starting server:", err)
 	}
 }
 
-// Helper functions to get environment variables with defaults
+func performMigration(db *gorm.DB) error {
+	// Check if the tables exist
+	if db.Migrator().HasTable(&User{}) &&
+		db.Migrator().HasTable(&Location{}) &&
+		db.Migrator().HasTable(&Match{}) &&
+		db.Migrator().HasTable(&Tournament{}) {
+		fmt.Println("Tables already exist, skipping migration")
+		return nil
+	}
+
+	// If tables don't exist, create them
+	err := db.AutoMigrate(&User{}, &Location{}, &Match{}, &Tournament{})
+	if err != nil {
+		return err
+	}
+
+	// Add any additional migration steps here if needed
+	// For example, adding indexes:
+	err = db.Exec("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)").Error
+	if err != nil {
+		return err
+	}
+
+	err = db.Exec("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)").Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Helper function to get environment variables with defaults
 func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
+	if value, exists := os.LookupEnv(key); exists {
+		return value
 	}
-	return value
+	return defaultValue
 }
 
-func getIntEnv(key string, defaultValue int) int {
-	valueStr := os.Getenv(key)
-	if valueStr == "" {
-		return defaultValue
-	}
-	// ... (add error handling for parsing the integer)
-	return defaultValue // Replace with actual parsed value
-}
-
-// API route handler function
-func handleAPIData(db *sql.DB) http.HandlerFunc {
+// Hello World API endpoint
+func handleHello(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// ... (rest of your API route logic remains the same)
-		switch r.URL.Path {
-		case "/api/users":
-			// ... (handle /api/users route)
-		case "/api/matches":
-			// ... (handle /api/matches route)
-		case "/api/tournaments":
-			// ... (handle /api/tournaments route)
-		default:
-			http.Error(w, "Not Found", http.StatusNotFound)
-		}
-	}
-}
+		var count int64
+		db.Model(&User{}).Count(&count)
 
-func createUser(db *sql.DB, username, email, password string) error {
-	_, err := db.Exec("INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)",
-		username, email, hashPassword(password))
-	return err
+		response := map[string]string{
+			"message": fmt.Sprintf("Hello World! Connected to tennisbuddy database. There are %d users.", count),
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
 }

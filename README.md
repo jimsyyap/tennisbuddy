@@ -1,6 +1,6 @@
 # tennis buddy
 
-- challenge? It's like strava for tennis
+- ? Why not like strava for tennis
 - golang back-end; vue.js front-end
 
 ## TODO
@@ -19,6 +19,8 @@
 - [ ] users can view matches/comp results
 - [ ] set up tables (postgres)
 - [ ] matching algorithm using ML/AI
+- [ ] video streaming
+- [ ] also do for paa
 - [ ] scrape data from ladders, present info with better interface, and allow users to do something on the site
 
 ### changelog
