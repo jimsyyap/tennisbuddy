@@ -18,7 +18,7 @@ import (
 
 var db *gorm.DB
 
-//go:embed vue_this/dist/*
+//go:embed frontend/*/*
 var static embed.FS
 
 // User model (update to include json tags)
