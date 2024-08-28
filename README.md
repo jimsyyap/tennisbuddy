@@ -63,4 +63,5 @@
 
 #### vue quickies
 - npm init vue@latest > npm i > run dev
+- why not use vue on some parts, react on others?
 
