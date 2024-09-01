@@ -2,6 +2,7 @@
 
 - Platform for rec tennis players in local to connect, play, and compete
 - golang back-end; vue.js front-end
+- the utr app seems similar. Use as a guide
 
 ## TODO
 
@@ -63,5 +64,5 @@
 
 #### vue quickies
 - npm init vue@latest > npm i > run dev
-- why not use vue on some parts, react on others?
+- why not use vue on parts you need to learn?
 
