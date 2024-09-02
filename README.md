@@ -27,6 +27,7 @@
 - [ ] video streaming
 - [ ] marketplace to sell, auction with bidding
 - [ ] membership dashboard
+- [ ] where to get stats, how to compute player ratings, rank
 - [ ] also do for paa
 - [ ] see how you can use this https://github.com/PacktPublishing/Full-Stack-React-Projects-Second-Edition/tree/master
 - [ ] scrape data from ladders, present info with better interface, and allow users to do something on the site
