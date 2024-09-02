@@ -2,7 +2,9 @@
 
 - Platform for rec tennis players in local to connect, play, and compete
 - golang back-end; vue.js front-end
-- the utr app seems similar. Use as a guide
+- the utr app seems similar, but it doesnt have reliable doubles stats -> opportunity?
+    - how to verify score?
+    - start with blackburn ladders
 
 ## TODO
 
